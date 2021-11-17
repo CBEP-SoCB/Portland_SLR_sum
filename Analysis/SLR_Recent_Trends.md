@@ -2,29 +2,29 @@ Analysis of Recent Sea Level Rise Trends at Portland, Maine
 ================
 Curtis C. Bohlen
 
-  - [Introduction](#introduction)
-  - [Import Libraries](#import-libraries)
-  - [Import Data](#import-data)
-  - [Estimating the Linear Trend](#estimating-the-linear-trend)
-  - [Mimic the NOAA Graphic](#mimic-the-noaa-graphic)
-      - [In Meters](#in-meters)
-  - [Reanalysis](#reanalysis)
-      - [Generate Cutpoints](#generate-cutpoints)
-      - [ANCOVA Model](#ancova-model)
-      - [Piecewise Linear Regression](#piecewise-linear-regression)
-      - [Visualizing the Models](#visualizing-the-models)
-      - [Cleanup](#cleanup)
-  - [All Periods of A Given Span](#all-periods-of-a-given-span)
-      - [Cleanup](#cleanup-1)
-  - [Multiple Periods for Arbitrary
+-   [Introduction](#introduction)
+-   [Import Libraries](#import-libraries)
+-   [Import Data](#import-data)
+-   [Estimating the Linear Trend](#estimating-the-linear-trend)
+-   [Mimic the NOAA Graphic](#mimic-the-noaa-graphic)
+    -   [In Meters](#in-meters)
+-   [Reanalysis](#reanalysis)
+    -   [Generate Cutpoints](#generate-cutpoints)
+    -   [ANCOVA Model](#ancova-model)
+    -   [Piecewise Linear Regression](#piecewise-linear-regression)
+    -   [Visualizing the Models](#visualizing-the-models)
+    -   [Cleanup](#cleanup)
+-   [All Periods of A Given Span](#all-periods-of-a-given-span)
+    -   [Cleanup](#cleanup-1)
+-   [Multiple Periods for Arbitrary
     Span](#multiple-periods-for-arbitrary-span)
-  - [Single Slope Function](#single-slope-function)
-      - [Test by Year](#test-by-year)
-      - [Test by Date](#test-by-date)
-  - [Multiple Slopes Function](#multiple-slopes-function)
-      - [Test Case](#test-case)
-      - [Many Slopes and Spans](#many-slopes-and-spans)
-  - [Graphic Summaries](#graphic-summaries)
+-   [Single Slope Function](#single-slope-function)
+    -   [Test by Year](#test-by-year)
+    -   [Test by Date](#test-by-date)
+-   [Multiple Slopes Function](#multiple-slopes-function)
+    -   [Test Case](#test-case)
+    -   [Many Slopes and Spans](#many-slopes-and-spans)
+-   [Graphic Summaries](#graphic-summaries)
 
 <img
     src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
@@ -36,24 +36,43 @@ Several reviewers wanted us to highlight that recent SLR rates in our
 region are higher than they used to be and so SLR rates are
 “accelerating”.
 
-Here we determine whether the data from the Portland Tide Gage supports
-that idea.
+Here we look at long-term average rates of sea level rise, and determine
+whether the data from the Portland Tide Gage supports that idea. We
+conclude that it does not.
+
+While the most recent 20 year period shows rates of sea level rise
+higher than almost all other 20 year periods in the last 100 years, that
+is NOT true of 10, 15, or 25 year periods of time. THe 20 year period
+with the highest average SLR was actually back in the early 1900s. We do
+not consider the claim of “accelerating” SLR to be well supported by
+avaiable data.
+
+Many of the ideas first developed in this Notebook have since been
+incorporated into the `SLRSIM` package. The goal of that package is so
+simplify analysis of historic SLR. A draft version of the package is
+available at [SLRSIM](https://github.com/ccb60/SLRSIM).
 
 # Import Libraries
 
 ``` r
 library(tidyverse)
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-#> v ggplot2 3.3.2     v purrr   0.3.4
-#> v tibble  3.0.4     v dplyr   1.0.2
-#> v tidyr   1.1.2     v stringr 1.4.0
-#> v readr   1.4.0     v forcats 0.5.0
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.5     v purrr   0.3.4
+#> v tibble  3.1.6     v dplyr   1.0.7
+#> v tidyr   1.1.4     v stringr 1.4.0
+#> v readr   2.1.0     v forcats 0.5.1
+#> Warning: package 'ggplot2' was built under R version 4.0.5
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
 library(readr)
 
 library(zoo)     # for the rollmean function
+#> Warning: package 'zoo' was built under R version 4.0.5
 #> 
 #> Attaching package: 'zoo'
 #> The following objects are masked from 'package:base':
@@ -89,7 +108,7 @@ The following generates many warnings about parsing errors, but all data
 appears to be correctly imported.
 
 ``` r
-sibfldnm <- 'Original Data'
+sibfldnm <- 'Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 fn <- '8418150_meantrend.csv'
@@ -106,22 +125,14 @@ slr_data  <- read_csv(fpath,
   rename(MSL = Monthly_MSL) %>%
   mutate(theDate = as.Date(paste0(Year,'/', Month,'/',15))) %>%
   mutate(MSL_ft = MSL * 3.28084)
-#> Warning: 1299 parsing failures.
-#> row col  expected    actual                                                                                                                              file
-#>   1  -- 7 columns 8 columns 'C:/Users/curtis.bohlen/Documents/State of the Bay 2020/Data/A6. Climate Change/Portland-SLR/Original Data/8418150_meantrend.csv'
-#>   2  -- 7 columns 8 columns 'C:/Users/curtis.bohlen/Documents/State of the Bay 2020/Data/A6. Climate Change/Portland-SLR/Original Data/8418150_meantrend.csv'
-#>   3  -- 7 columns 8 columns 'C:/Users/curtis.bohlen/Documents/State of the Bay 2020/Data/A6. Climate Change/Portland-SLR/Original Data/8418150_meantrend.csv'
-#>   4  -- 7 columns 8 columns 'C:/Users/curtis.bohlen/Documents/State of the Bay 2020/Data/A6. Climate Change/Portland-SLR/Original Data/8418150_meantrend.csv'
-#>   5  -- 7 columns 8 columns 'C:/Users/curtis.bohlen/Documents/State of the Bay 2020/Data/A6. Climate Change/Portland-SLR/Original Data/8418150_meantrend.csv'
-#> ... ... ......... ......... .................................................................................................................................
-#> See problems(...) for more details.
+#> Warning: One or more parsing issues, see `problems()` for details
 ```
 
 # Estimating the Linear Trend
 
 We use a linear model analysis to compare results to the linear trend
 reported by NOAA on the source web page. NOAA reports the rate of sea
-level rise in millimeters as \(1.9 \pm 0.14 mm /yr\).
+level rise in millimeters as 1.9 ± 0.14*m**m*/*y**r*.
 
 The NOAA data are reported monthly, but to take advantage of the Date
 class in R, we expressed monthly data as relating to the fifteenth of
@@ -480,33 +491,27 @@ We want to repeat that analysis for different spans.
 
 We first develop a function to capture the essence of this analysis, and
 then revise that function to produce one used to automate repeat
-caclulations with different spans.
+calculations with different spans.
 
 # Single Slope Function
 
 This function calculates a slope, and evaluates statistical significance
 of that slope, based on generalized least squares. This is a building
-block for later functions, and served here mostly t odemonstrate the
+block for later functions, and serves here mostly to demonstrate the
 logic we use.
 
-We use non-standard evaluation (“quoting”) to access the names of the .x
-and .y variables. That way we can reference them in the data frame. They
-are “data variables” not “environment variables”.
+Note that we use quoting and unquoting to allow users to pass a data
+frame and the names of data columns without quoting.
 
 Later functions include more error checking code.
 
 ``` r
 find_slope <- function(.dat, x_, y_, x_start, x_span) {
-  x = ensym(x_)
-  y = ensym(y_)
+  x = enquo(x_)
+  y = enquo(y_)
 
-  x_txt <- as.character(x)
-  y_txt <- as.character(y)
-  
-  x <- .dat %>%
-    pull(x_txt)
-  y <-  .dat %>%
-    pull(y_txt)
+  x <- rlang::eval_tidy(x, .dat)
+  y <- rlang::eval_tidy(y, .dat)
   
   the_dat <- tibble(x = x, y = y) %>%
     filter(x  >= x_start, x < (x_start + x_span))
@@ -582,31 +587,17 @@ find_slopes <- function(.dat, x_, y_, x_list, x_span) {
   #           in the same units as x_.
   
   # First, capture the data variables
-  x <- ensym(x_)
-  y <- ensym(y_)
-  
-  # Text versions are convenient for base R subsetting with `[[`
-  # And confirming that these are found in the data, to provide a more
-  # informative error message.  Not strictly necessary?
-  x_txt <- as.character(x)
-  y_txt <- as.character(y)
-  
-  stopifnot('x_ and y_ must be column names found in the data' = 
-              x_txt %in% names(.dat) &
-              y_txt %in% names(.dat))
+  x = enquo(x_)
+  y = enquo(y_)
+
+  x <- rlang::eval_tidy(x, .dat)
+  y <- rlang::eval_tidy(y, .dat)
   
   # Sort the list of starting times, just in case someone does something odd
   # this is not strictly necessary, but may prevent confusion...
   x_list<- sort(x_list) 
   x_start <- x_list[1]
   
-  # Assemble data for analysis
-  # This is a brute force approach, since I am not sure how to pass data
-  # variables into the modeling function, but it works....
-  x <- .dat %>%
-    pull(x)
-  y <-  .dat %>%
-    pull(y)
   # Error handling for bad time coordinates
   if (x_start < min(x)) {
     warning(paste('Starting value, ', x_start,
@@ -801,7 +792,10 @@ plt
 <img src="SLR_Recent_Trends_files/figure-gfm/panel_histograms-1.png" style="display: block; margin: auto;" />
 
 There is certainly no strong evidence here that rate of SLR is
-increasing. This analyses shows that: 1. Whether recent periods show
-“high” rates of SLR depends critically on the period selected. 2. The
-most recent ten year period actually shows a fairly low slope based on
-historical values.
+increasing.
+
+This analyses shows that:  
+1. Whether recent periods show “high” rates of SLR depends critically on
+the period selected.  
+2. The most recent ten year period actually shows a fairly low slope
+based on historical values.

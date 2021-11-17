@@ -22,8 +22,20 @@ knitr::opts_chunk$set(fig.align = 'center',
 Several reviewers wanted us to highlight that recent SLR rates in our region
 are higher than they used to be and so SLR rates are "accelerating".  
 
-Here we determine whether the data from the Portland Tide Gage supports that
-idea.
+Here we look at long-term average rates of sea level rise, and determine whether
+the data from the Portland Tide Gage supports that idea.  We conclude that it
+does not.  
+
+While the most recent 20 year period shows rates of sea level rise higher than
+almost all other 20 year periods in the last 100 years, that is NOT true of 10,
+15, or 25 year periods of time. THe 20 year period with the highest average SLR 
+was actually back in the early 1900s.  We do not consider the claim of 
+"accelerating" SLR to be well supported by avaiable data.
+
+Many of the ideas first developed in this Notebook have since been incorporated
+into the `SLRSIM` package.  The goal of that package is so simplify analysis of 
+historic SLR. A draft version of the package is available at
+[SLRSIM](https://github.com/ccb60/SLRSIM).
 
 # Import Libraries
 ```{r libraries}
@@ -53,7 +65,7 @@ to the most recent Mean Sea Level datum established by CO-OPS."
 The following generates many warnings about parsing errors, but all data
 appears to be correctly imported.
 ```{r load_data}
-sibfldnm <- 'Original Data'
+sibfldnm <- 'Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 fn <- '8418150_meantrend.csv'
@@ -164,18 +176,20 @@ ancova_gls <- gls(MSL~recent*theDate, data=slr_data,
                   correlation = corAR1(), method = 'ML')
 summary(ancova_gls)
 ```
+
 Here, I pull the two slope parameters, and calculate the proportionate change in
 slope implied by the model.
-```{r}
+```{r prop_change}
 cc = coef(ancova_gls)[3:4]
 cc[2]/sum(cc)
 rm(cc)
 ```
+
 By this analysis, the recent slope is more than 50% steeper than the older
 slopes, and represents a significant improvement over a simple linear
 regression. We can confirm significance by ANOVA. (Note that a 25 year span is 
 **not** significantly different from the long-term span).
-```{r}
+```{r the_anova}
 anova(the_gls, ancova_gls)
 ```
 
@@ -190,7 +204,7 @@ piecewise_gls <- gls(MSL ~ theDate + recent_dt, data=slr_data,
 summary(piecewise_gls)
 ```
 
-```{r}
+```{r another_anova}
 anova(the_gls, piecewise_gls, ancova_gls)
 ```
 This also shows a significant improvement over a simple linear model.
@@ -212,7 +226,7 @@ ggplot(slr_data, aes(theDate, MSL)) +
 ```
 
 ## Cleanup
-```{r}
+```{r cleanup}
 rm(cutdate, cutyear)
 rm(ancova_gls, piecewise_gls, the_gls)
 ```
@@ -226,7 +240,7 @@ Because we will have a limited number of potential slopes, and they are
 correlated, we won't conduct a formal statistical test, but this will provide
 a sense of how unique the recent past has been.
 
-```{r}
+```{r all_periods}
 years   = min(slr_data$Year):(max(slr_data$Year) - span)
 slopes  = numeric(length(years))
 is_sigs = logical(length(years))
@@ -259,7 +273,7 @@ ggplot(slopes_df, aes(x = slopes * 1000 * 365.25, fill = is_sigs)) +
 So, the current estimated slope is on the high end of the slopes observed over
 all twenty year periods of record, but it is not the highest.
 
-```{r}
+```{r compare_to_all}
 slopes_df %>%
   summarize(cnt_lower = sum(slopes< last(slopes)),
             pct_lower = cnt_lower/ length(slopes),
@@ -288,40 +302,33 @@ undercuts the argument that our recent high slopes are evidence that SLR is
 "accelerating".
 
 ## Cleanup
-```{r}
+```{r more_cleanup}
 rm(slopes_df, mod, ind, span, startyear)
 ```
 
 # Multiple Periods for Arbitrary Span
 We want to repeat that analysis for different spans.
 
-
 We first develop a function to capture the essence of this analysis, and then
-revise that function to produce one used to automate repeat caclulations
+revise that function to produce one used to automate repeat calculations
 with different spans.
 
 # Single Slope Function
 This function calculates a slope, and evaluates statistical significance of that
 slope, based on generalized least squares.  This is a building block for later
-functions, and served here mostly t odemonstrate the logic we use.
+functions, and serves here mostly to demonstrate the logic we use.
 
-We use non-standard evaluation ("quoting") to access the names of the .x  and .y
-variables.  That way we can reference them in the data frame.  They are 
-"data variables" not "environment variables".
+Note that we use quoting and unquoting to allow users to pass a data frame and 
+the names of data columns without quoting.
 
 Later functions include more error checking code.
 ```{r find_slope}
 find_slope <- function(.dat, x_, y_, x_start, x_span) {
-  x = ensym(x_)
-  y = ensym(y_)
+  x = enquo(x_)
+  y = enquo(y_)
 
-  x_txt <- as.character(x)
-  y_txt <- as.character(y)
-  
-  x <- .dat %>%
-    pull(x_txt)
-  y <-  .dat %>%
-    pull(y_txt)
+  x <- rlang::eval_tidy(x, .dat)
+  y <- rlang::eval_tidy(y, .dat)
   
   the_dat <- tibble(x = x, y = y) %>%
     filter(x  >= x_start, x < (x_start + x_span))
@@ -335,19 +342,19 @@ find_slope <- function(.dat, x_, y_, x_start, x_span) {
 ```
 
 ## Test by Year
-```{r}
+```{r test_fxn}
 find_slope(slr_data, Year, MSL, 1950, 10)
 
 ```
 
 ## Test by Date
-```{r}
+```{r test_fxn_again}
 find_slope(slr_data, theDate, MSL, as.Date('1950-01-01'), 10 * 365.25)
 
 ```
 
 TO compare slopes, we need to convert units:
-```{r}
+```{r convert_slope}
 3.017991e-06 * 365.25
 ```
 The two slopes are not **quite** equal.  The linear models are not the same, as
@@ -373,31 +380,17 @@ find_slopes <- function(.dat, x_, y_, x_list, x_span) {
   #           in the same units as x_.
   
   # First, capture the data variables
-  x <- ensym(x_)
-  y <- ensym(y_)
-  
-  # Text versions are convenient for base R subsetting with `[[`
-  # And confirming that these are found in the data, to provide a more
-  # informative error message.  Not strictly necessary?
-  x_txt <- as.character(x)
-  y_txt <- as.character(y)
-  
-  stopifnot('x_ and y_ must be column names found in the data' = 
-              x_txt %in% names(.dat) &
-              y_txt %in% names(.dat))
+  x = enquo(x_)
+  y = enquo(y_)
+
+  x <- rlang::eval_tidy(x, .dat)
+  y <- rlang::eval_tidy(y, .dat)
   
   # Sort the list of starting times, just in case someone does something odd
   # this is not strictly necessary, but may prevent confusion...
   x_list<- sort(x_list) 
   x_start <- x_list[1]
   
-  # Assemble data for analysis
-  # This is a brute force approach, since I am not sure how to pass data
-  # variables into the modeling function, but it works....
-  x <- .dat %>%
-    pull(x)
-  y <-  .dat %>%
-    pull(y)
   # Error handling for bad time coordinates
   if (x_start < min(x)) {
     warning(paste('Starting value, ', x_start,
@@ -456,7 +449,7 @@ find_slopes <- function(.dat, x_, y_, x_list, x_span) {
 
 
 ## Test Case
-```{r}
+```{r test_new_fxn}
 span <- 10
 dates <-  as.Date(paste(c(1920, 1940, 1960, 1980),'01-01', sep = '-'))
 print(dates)
@@ -469,7 +462,7 @@ Dates are stored internally as integers, with some special attributes. Our code
 strips the attributes so we are left with "naked" integers. We often want to 
 convert back to dates that can be done with  
 
-```{r}
+```{r recast_dates}
 origin = as.numeric(as.Date('1970-01-01', format = "%Y-%m-%d"))
 a <- a %>%
   mutate(min_x = as.Date(as.numeric(min_x), origin = origin))
@@ -478,7 +471,7 @@ a
 
 ## Many Slopes and Spans
 Now, Lets put that all together, and form a list of dataframes.
-```{r}
+```{r many_spans_data}
 spans <- c(25, 20, 15, 10)
 # pre-assign a list to hold results
   res <- vector(mode = "list", length = length(spans))
@@ -501,9 +494,10 @@ for (ind in 1:length(spans)) {
   res[[ind]] <- r
 }
 ```
+
 Finally, we assemble a composite data set and do some light data reorganization
 to prepare for graphics.
-```{r}
+```{r many_spans_data_combine}
 results <- do.call(bind_rows, res) %>%
   mutate(StartYear = as.numeric(format(min_x, format = '%Y')),
          EndYear =  StartYear + Span - 1,   # I THINK this is right -- from
@@ -556,10 +550,10 @@ plt <- ggplot(results, aes(x = AnnSlopemm)) +
 plt
 ```
 
-
 There is certainly no strong evidence here that rate of SLR is increasing.
-This analyses shows that:
+
+This analyses shows that:  
 1.  Whether recent periods show "high" rates of SLR depends critically on the
-period selected.
+period selected.  
 2.  The most recent ten year period actually shows a fairly low slope based on
 historical values.

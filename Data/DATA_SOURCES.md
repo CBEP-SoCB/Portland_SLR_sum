@@ -11,33 +11,25 @@ button).
 (https://tidesandcurrents.noaa.gov/sltrends/sltrends_station.shtml?id=8418150) 
 June 6, 2020 by Curtis C. Bohlen
 
-Data are expressed in 
-
 Note:  The webpage declares the average sea level rise to be 1.89+/- 0.14 mm/yr
 which is equivalent to a change of 0.62 feet in 100 years. 
 
-**portland_tides_monthly.csv**  
-Data downloaded directly from NOAA API using a simple python script
-[(here)](portland_tide_gage_monthly.py).
-Details on the API are available from the
-[NOAA web page](https://tidesandcurrents.noaa.gov/api/).
-
-Data is highly correlated, but not identical with the previous data set. After
-review, this data was not used in analysis or preparation of graphics.
-
 **portland_tides_hourly.csv**  
-Data downloaded directly from NOAA API using a simple python script
-[(here)](portland_tide_gage_hourly.py).
+Data downloaded directly from NOAA API using a simple python script on
+12/15/2020, by Curtis Bohlen.
 Details on the API are available from the
 [NOAA web page](https://tidesandcurrents.noaa.gov/api/).
 
 This data was used to generate daily counts of exceedences above flood levels,
-where flood levels are defined as observations above Portland's highest Astronomica lTide (HAT), at 11.95 MLLW, or 
+where flood levels are defined as observations above Portland's highest 
+Astronomical Tide (HAT), at 11.95 MLLW.
 
 **portland_tides_hourly_predicts.csv**  
-Data downloaded directly from NOAA API using a simple python script
-[(here)](portland_tide_gage_hourly_predicts.py).
-Details on the API are available from the
+Data downloaded directly from NOAA API using a simple python script on
+12/15/2020, by Curtis Bohlen. Details on the API are available from the
 [NOAA web page](https://tidesandcurrents.noaa.gov/api/).
+
+This data was used with the preceding data to model future SLR based on time 
+series models.
 
 

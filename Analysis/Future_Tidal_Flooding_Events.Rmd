@@ -23,11 +23,11 @@ weather-related events, we presented data on the changing frequency of "events"
 over time, including hot days, cold days, large storms, etc.  They suggested we 
 show similar graphics showing changes in frequency of tidal flooding events.
 We prepared that graphic in
-[Tidal_Flooding_Events.Rmd](Graphics/Tidal_Flooding_Events.Rmd]).
+[Tidal_Flooding_Events.Rmd](Graphics/Tidal_Flooding_Events.Rmd).
 
 In this notebook, we to put that graphic in context by looking at estimates of
 future tidal flooding risk under a few SLR scenarios.  Our goal is to be able to
-say that analysis or simulation suggests an x% increase in frequency of flooding
+say that analysis or simulation suggests an X% increase in frequency of flooding
 with a Y foot increase in SLR.
 
 In our analysis, we follow Maine Geological Survey's practice of declaring a
@@ -38,21 +38,25 @@ mean lower low water (MLLW) at Portland.
 Maine Geological Survey has estimated future flooding risk by adding
 a SLR value (0.8 foot and 1.5 feet) to the historical record, and showing how 
 frequent flooding would have been under SLR conditions. This provides a ready
-estimate of impact of SLR on frequency of flooding.  They do not appear to
-provide quantitative estimates of change of frequency of flooding.
+estimate of impact of SLR on frequency of flooding.
 
 Details of their method and a data viewer for different locations in Maine are
 available at the 
 [Maine Geological Survey sea level rise data viewer](https://mgs-collect.site/slr_ticker/slr_dashboard.html).
 
-We repeat their analysis for selected SLR scenarios ourselves, over a fixed
-period of time (the past 20 years) and estimate percentage change in flooding
-under SLR.  Our results will differ from theirs, as we count days per year with
-flooding, while they count hours.
+We (nearly) repeat their analysis for selected SLR scenarios ourselves, over a
+fixed period of time (the past 20 years) and estimate percentage change in
+flooding under SLR.  Our results will differ from theirs, as we count days per
+year with flooding, while they count hours.
 
 We then go on to simulate flooding histories based on the 19 year tidal epoch,
 and examining predicted flood frequencies using three different models under
 one foot, two foot, and three foot SLR scenarios.
+
+Many of the ideas first developed in this Notebook have since been incorporated
+into the `SLRSIM` package.  The goal of that package is so simplify analysis of 
+historic SLR. A draft version of the package is available at
+[SLRSIM](https://github.com/ccb60/SLRSIM).
 
 # Import Libraries
 ```{r libraries}
@@ -74,7 +78,7 @@ python scripts to download and assemble consistent data from the NOAA Tides and
 Currents API.  Details are provided in the "Original_Data" folder.
 
 ```{r folders}
-sibfldnm <- 'Original Data'
+sibfldnm <- 'Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 
@@ -245,6 +249,7 @@ test <- lm(deviation ~ theDate, data = epoch)
 coef(test)
 unname(round(coef(test)[2]*1000*365.25,2))
 ```
+
 We do not show error estimates of this regression either, but it suggests a
 change in deviations one third as great as observed over the entire period of
 record, at less than a mm a year.
@@ -256,6 +261,7 @@ creating a reasonable "random" version of deviations so that we can simulate
 future conditions.
 
 **Values of Tide Levels in the rest of the Notebook  are in meters.**
+
 ```{r hist_deviations}
 ggplot() +
   geom_histogram(aes(x = deviation, y = ..density..),
@@ -267,6 +273,7 @@ ggplot() +
                 color = 'blue') +
   geom_vline (xintercept = 0, color = 'red')
 ```
+
 So, deviations are "close" to normally distributed, or at least bell shaped,
 with mean close to zero.  A mean close to zero is not due to chance, but the
 nearly normal distribution reflects something about the nature of atmospheric
@@ -399,8 +406,9 @@ ggplot() +
   xlab('Hours') +
   labs(subtitle = 'Black is Simulated, Orange is Observed')
 ```
-The is a **lot** more temporal structure in the original data than in the
-simulated data. 
+There is a **lot** more temporal structure in the original data than in the
+simulated data. This is because the original data was autocorrelated, and 
+simple random (re)sampling eliminates the temporal autocorrelation.
 
 ### Resampling Function
 This is the workhorse function that carries out the steps just described
@@ -501,13 +509,15 @@ hours 50 minutes), seasonal ARIMAs are very slow to fit. Even first order
 seasonal terms take four or five minutes to fit.  Second order and higher terms 
 take substantially longer. An exhaustive search bogged down immediately.
 
-We first search for non-seasonal ARIMA models, and then refit similar
-seasonal models. 
+We first search for non-seasonal ARIMA models, and then refit similar seasonal
+models. (We explored this problem in greater depth when developing our
+`SLRSIM` package, but we did not develop those ideas in time for inclusion in
+State of Casco Bay.)
 
 We speed things up by setting `stepwise` and `approximation` arguments to
 `FALSE`. You can request a trace to show how the model search progressed, as we
 have done. You can also decide whether to fit seasonal terms, but to do that,
-you have to pass a frequency to the timeseries object.
+you have to pass a frequency to the time series object.
 
 We get a qualitatively different fifth order ARIMA model if we set `stepwise` to 
 `FALSE`. The alternate model (not shown) has one AR term and four MA terms.
@@ -536,33 +546,12 @@ so we have gotten rid of most of the non-periodic structure, and the structure
 under a period of a few hours, but residuals still show higher-order periodic
 structure.
 
-#### Taking into Account the Tides
-This takes on the order of 20 minutes to run.  We did not search other suitable
-seasonal model components, and it is quite possible a moving average process
-would be more successful.
-
-The following takes on the order of 20 minutes to run.
-```{r tidal_arima, cache = TRUE}
-seasonal_arima <- arima(ts(epoch$deviation, frequency = 25),
-                        order = c(4,0,0),
-                        seasonal = list(order = c(2L, 0L, 0L)),
-                        include.mean = FALSE
-                        )
-(seasonal_coefs <- coef(seasonal_arima))
-(seasonal_sigma2 <- seasonal_arima$sigma2)
-```
-
-```{r acf_tidal_arima_residuals}
-acf(seasonal_arima$residuals,  na.action = na.pass, lag.max = 24*5)
-pacf(seasonal_arima$residuals,  na.action = na.pass, lag.max = 24*5)
-```
-
-This reduces, but does not eliminate the periodic components in the ACF and 
-PACF.  Magnitudes are reduced by a third to a half.
-
-Unfortunately, base R and `forcast` have no suitable functions for simulating
-seasonal ARIMA models, although some other packages apparently do. We do not
-continue with exploration of simulation from a seasonal ARIMA model.
+A "Seasonal" ARIMA that includes a 25 hour quasi-tidal period reduces, but does
+not eliminate the periodic components in the ACF and PACF.  Magnitudes are
+reduced by a third to a half.  But it takes a long time to run, and  base R and 
+`forcast` have no suitable functions for simulating seasonal ARIMA models, 
+although some other packages apparently do. We do not continue with exploration 
+of seasonal ARIMA models here.
 
 ### Evaluating ARIMA Simulations
 We can simulate a "random"  time series that matches the estimated ARIMA
@@ -621,9 +610,9 @@ prominent periodic components of the real data.  There is somewhat more
 long-term structure in the observed data, but we're not far off.
 
 ### Simulation Function
-We create a function that simulates a possible timeseries of tidal heights. This
-works in direct analogy to the resampling function, `resample_once()`. We
-replace the resampling mechanism for generating a future stream of deviations 
+We create a function that simulates a possible time series of tidal heights.
+This works in direct analogy to the resampling function, `resample_once()`. We
+replace the resampling mechanism for generating a future stream of deviations
 from tidal predictions used there with one based on simulating an ARIMA process.
 
 Note that this function relies on existence of parameters and standard error 
@@ -678,7 +667,7 @@ sim_once(epoch, Prediction, theDate, 0)
 ```
 
 ### Run Full Simulation
-The following takes just several minutes to run.
+The following takes several minutes to run.
 ```{r demo_sim_once}
 set.seed(54321)
 samp = 1000
@@ -755,7 +744,7 @@ v <- slr_annual$`One Foot`
 Under that simple model, one foot of SLR increases flooding by a whopping 
 `r round(v, 1)`. Interestingly, that is mostly because the
 denominator -- the number of floods predicted under no sea level rise -- is so
-small.  We use HAT as our definition of present-day flooding, but exceedences
+small.  We use HAT as our definition of present-day flooding, but excedences
 above HAT would have been few during the Tidal Epoch, because tidal predictions
 (including the definition of HAT) were based on observed tides during that 
 period.
@@ -776,8 +765,7 @@ res_auto <- function(slr, samp) {
 ```
 
 The following takes a couple of minutes to run.  It simulates 1000
-sets of tide levels for each of four SLR scenarios.  It takes a couple of 
-minutes to  run.
+sets of tide levels for each of four SLR scenarios.
 ```{r resamples}
 set.seed(12345)
 samp = 1000
@@ -828,19 +816,21 @@ samp = 1000
 simulates <- lapply((0:3 * 0.3048), function(x) sim_auto(x, samp))
 ```
 
-```{r}
+```{r reorganize_sims}
 names(simulates) = c('No SLR', 'One Foot SLR', 'Two Foot SLR', 'Three Foot SLR')
 simulates <- do.call(bind_cols, simulates)
+```
 
-simulates <- simulates %>%
-  summarize(across(everything(), c(mean, sd), na.rm = TRUE)) %>%
+```{r}
+simulates_sum <- simulates %>%
+  summarize(across(everything(), mean, na.rm = TRUE))%>%
   rowwise() %>%
   mutate(`One Foot`   = round(`One Foot SLR`/`No SLR`,2),
          `Two Foot`   = round(`Two Foot SLR`/`No SLR`,2),
          `Three Foot` = round(`Three Foot SLR`/`No SLR`,2))
-simulates
+simulates_sum
 
-v <- simulates$`One Foot`
+v <- simulates_sum$`One Foot`
 ```
 
 This analysis suggests a one foot sea level rise would increase flooding by a
@@ -848,7 +838,7 @@ factor of about `r round(v,1)`.
 
 ## Make a Nice Table 
 ```{r}
-t <- rbind(slr_annual, resamp, simulates)
+t <- rbind(slr_annual, resamp, simulates_sum)
 row.names(t) <- c('Add SLR to tidal Epoch', 'Resampling Model', 'ARIMA Model')
 knitr::kable(t)
 ```
@@ -876,7 +866,7 @@ the last ten years, and in fact make the increase in flooding frequency look
 much more severe.
 
 Note we are working in meters here.
-```{r direct}
+```{r direct_2}
 HAT <- 3.640
 slr_annual_2 <- epoch %>%
   mutate(slr_1 = .038 + MLLW + 1 * 0.3048,
