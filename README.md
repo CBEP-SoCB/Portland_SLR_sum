@@ -6,6 +6,23 @@
     
 Analysis of sea level rise data from Portland Harbor, Portland Maine
 
+This repository contains simplified versions of code used to analyze sea level 
+rise trends, based on data from the Portland NOAA Tide Station.  We focus on 
+four questions:
+
+1.  Is sea level rising in Portland, and if so, how fast?  
+2.  Is the rate of sea level change itself changing?  In particular, is 
+    there evidence from the Portland Data that sea level rise is accelerating?  
+3.  Has the frequency of tidal flooding changed over the past century?
+4.  How do we expect the frequency of tidal flooding to change under moderate
+    sea level rise scenarios?
+    
+Many of the analytic approaches we first explored when developing the State of
+Casco Bay report have since been incorporated into an R package.  The package
+facilitates conducting similar analysis for other NOAA tide station. The
+development version of the package is available on
+[github](https://github.com/ccb60/SLRSIM).
+
 # Statement of Purpose
 CBEP is committed to the ideal of open science.  Our State of the Bay data
 archives ensure the science underlying the 2020 State of the Bay report is
@@ -57,17 +74,10 @@ Rise to be 1.89+/- 0.14 mm/yr, which is equivalent to a change of 0.62 feet in
 100 years. We confirmed that result in our own analyses of these data.
    
 Related observational monthly data, was downloaded via a NOAA API using a
-simple python script
-[included in this archive](Original_Data/portland_tide_gage_monthly.py).
-Data from the two data sources is highly correlated, but not identical, which
-presumably reflects NOAA's pre-processing of the data.
+simple python script. Data from the two data sources is highly correlated, 
+but not identical, which presumably reflects NOAA's pre-processing of the data.
 
 Additional hourly data was downloaded via the NOAA API to study probability of
 daily tidal elevations exceeding a flood level equivalent to the current
 "Highest Astronomical Tide" level for Portland, at 11.95 ft MLLW.
 
-# Link to R Notebooks
-**THESE RELATIVE LINKS ARE NOT WORKING**
-[SLR Graphics](../../Graphics/SLR_Graphic.md)
-
-[Analysis of recent SL trends](Analysis/SLR_Recent_Trends.md)
