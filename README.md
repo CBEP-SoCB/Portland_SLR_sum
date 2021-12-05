@@ -19,7 +19,7 @@ four questions:
     
 Many of the analytic approaches we first explored when developing the State of
 Casco Bay report have since been incorporated into an R package.  The package
-facilitates conducting similar analysis for other NOAA tide station. The
+facilitates conducting similar analysis for other NOAA tide stations. The
 development version of the package is available on
 [github](https://github.com/ccb60/SLRSIM).
 
@@ -54,7 +54,7 @@ additional data analysis in response to comments by reviewers. That
 supplementary analysis included:  
 1.  a deeper dive into whether sea level rise in our region shows signs of
     accelerating, as has been widely predicted, and  
-2.  Development of development of a graphic examiniing whether frequency of
+2.  Development of a graphic examining whether frequency of
     extreme tidal flooding has increased.
 
 # Summary of Data Sources
