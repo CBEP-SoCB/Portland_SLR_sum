@@ -52,8 +52,8 @@ In this case, our goal was principally to recreate the graphic that NOAA makes
 available to depict long-term sea level rise trends.  We conducted limited 
 additional data analysis in response to comments by reviewers. That
 supplementary analysis included:  
-1.  a deeper dive into whether sea level rise in our region shows signs of
-    accelerating, as has been widely predicted, and  
+1.  A deeper dive into whether sea level rise in our region shows signs of
+    accelerating, as has been widely predicted.
 2.  Development of a graphic examining whether frequency of
     extreme tidal flooding has increased.
 
