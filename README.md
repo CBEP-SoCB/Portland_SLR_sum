@@ -35,12 +35,8 @@ All CBEP 2020 State of the Bay data analysis repositories are organized into two
 to four four sub-folders.  (One or more folders may be absent, if they were not
 needed). Each subfolder contains data, code and analysis results as follows:
 
-- Original Data.  Original data, with a "READ ME.TXT" file that documents data
-sources.  DATA IN THIS FOLDER IS AS ORIGINALLY PROVIDED OR ACCESSED.  
-- Derived Data.  Data derived from the originaL RAW DATA.  Includes
-documentation of data reorganization steps, either in the form of files (R
-notebooks, Excel files, etc.) that embody data transformations, or via another
-README.txt file.  
+- Data folder. Contains data in simplified or derived form as used in our data analysis.
+Associated metadata is contained in related Markdown documents, usually DATA_SOURCES.md and DATA_NOTES.md.
 - Analysis.  Contains one or more R Notebooks proceeding through the data
 analysis steps.  
 - Graphics.  Contains R Notebooks stepping through development of related
