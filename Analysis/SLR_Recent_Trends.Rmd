@@ -23,14 +23,14 @@ Several reviewers wanted us to highlight that recent SLR rates in our region
 are higher than they used to be and so SLR rates are "accelerating".  
 
 Here we look at long-term average rates of sea level rise, and determine whether
-the data from the Portland Tide Gage supports that idea.  We conclude that it
+the data from the Portland Tide Gauge supports that idea.  We conclude that it
 does not.  
 
 While the most recent 20 year period shows rates of sea level rise higher than
 almost all other 20 year periods in the last 100 years, that is NOT true of 10,
-15, or 25 year periods of time. THe 20 year period with the highest average SLR 
+15, or 25 year periods of time. The 20 year period with the highest average SLR 
 was actually back in the early 1900s.  We do not consider the claim of 
-"accelerating" SLR to be well supported by avaiable data.
+"accelerating" SLR to be well supported by available data.
 
 Many of the ideas first developed in this Notebook have since been incorporated
 into the `SLRSIM` package.  The goal of that package is so simplify analysis of 
@@ -281,8 +281,8 @@ slopes_df %>%
             pct_higher = cnt_higher/ length(slopes))
 ```
 
-So, the slope for the most recent 20 `r span` year period is lower than 13 of
-the other  20 `r span` year periods in the historic record.  Hardly a strong
+So, the slope for the most recent `r span` year period is lower than 13 of
+the other `r span` year periods in the historic record.  Hardly a strong
 case to be made that SLR is accelerating.  We can view that graphically too.
 
 ```{r dot_graphic}

@@ -45,7 +45,7 @@ higher than almost all other 20 year periods in the last 100 years, that
 is NOT true of 10, 15, or 25 year periods of time. The 20 year period
 with the highest average SLR was actually back in the early 1900s. We do
 not consider the claim of “accelerating” SLR to be well supported by
-avaiable data.
+available data.
 
 Many of the ideas first developed in this Notebook have since been
 incorporated into the `SLRSIM` package. The goal of that package is so
@@ -56,23 +56,17 @@ available at [SLRSIM](https://github.com/ccb60/SLRSIM).
 
 ``` r
 library(tidyverse)
-#> Warning: package 'tidyverse' was built under R version 4.0.5
 #> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
 #> v ggplot2 3.3.5     v purrr   0.3.4
 #> v tibble  3.1.6     v dplyr   1.0.7
 #> v tidyr   1.1.4     v stringr 1.4.0
-#> v readr   2.1.0     v forcats 0.5.1
-#> Warning: package 'ggplot2' was built under R version 4.0.5
-#> Warning: package 'tidyr' was built under R version 4.0.5
-#> Warning: package 'dplyr' was built under R version 4.0.5
-#> Warning: package 'forcats' was built under R version 4.0.5
+#> v readr   2.1.1     v forcats 0.5.1
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
 library(readr)
 
 library(zoo)     # for the rollmean function
-#> Warning: package 'zoo' was built under R version 4.0.5
 #> 
 #> Attaching package: 'zoo'
 #> The following objects are masked from 'package:base':
@@ -132,7 +126,7 @@ slr_data  <- read_csv(fpath,
 
 We use a linear model analysis to compare results to the linear trend
 reported by NOAA on the source web page. NOAA reports the rate of sea
-level rise in millimeters as 1.9 ± 0.14 mm/year.
+level rise in millimeters as 1.9 ± 0.14*m**m*/*y**r*.
 
 The NOAA data are reported monthly, but to take advantage of the Date
 class in R, we expressed monthly data as relating to the fifteenth of
@@ -456,10 +450,9 @@ slopes_df %>%
 #> 1        75     0.843         14      0.157
 ```
 
-So, the slope for the most recent 20 year period is lower than 13 of
-the other 20 year periods in the historic record. Hardly a strong
-case to be made that SLR is accelerating. We can view that graphically
-too.
+So, the slope for the most recent 20 year period is lower than 13 of the
+other 20 year periods in the historic record. Hardly a strong case to be
+made that SLR is accelerating. We can view that graphically too.
 
 ``` r
 ggplot(slopes_df, aes(x = years, y = slopes * 1000 * 365.25, color = is_sigs)) +
