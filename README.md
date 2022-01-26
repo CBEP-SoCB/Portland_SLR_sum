@@ -35,23 +35,16 @@ All CBEP 2020 State of the Bay data analysis repositories are organized into two
 to four four sub-folders.  (One or more folders may be absent, if they were not
 needed). Each subfolder contains data, code and analysis results as follows:
 
-- Data folder. Contains data in simplified or derived form as used in our data analysis.
+- Data. Contains data in simplified or derived form as used in our data analysis.
 Associated metadata is contained in related Markdown documents, usually DATA_SOURCES.md and DATA_NOTES.md.
+
 - Analysis.  Contains one or more R Notebooks proceeding through the data
 analysis steps.  
+
 - Graphics.  Contains R Notebooks stepping through development of related
 graphics, and also raw copies of resulting graphics, usually in \*.png and
 \*.pdf formats.  Because of downstream graphic design processes, graphics
 included here may differ from how they appear in the State of the Bay.  
-
-In this case, our goal was principally to recreate the graphic that NOAA makes
-available to depict long-term sea level rise trends.  We conducted limited 
-additional data analysis in response to comments by reviewers. That
-supplementary analysis included:  
-1.  a deeper dive into whether sea level rise in our region shows signs of
-    accelerating, as has been widely predicted, and  
-2.  Development of a graphic examining whether frequency of
-    extreme tidal flooding has increased.
 
 # Summary of Data Sources
 The data used to produce the SLR graphic was downloaded directly from NOAA
